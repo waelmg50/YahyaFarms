@@ -11,7 +11,7 @@ namespace YahyaFarms.Models
         [Required]
         [MaxLength(100)]
         [DisplayName("اسم الصنف:")]
-        public required string ItemName { get; set; }
+        public string ItemName { get; set; } = string.Empty;
         [MaxLength(1000)]
         [DisplayName("الوصف:")]
         public string ItemDescription { get; set; } = string.Empty;
@@ -19,5 +19,8 @@ namespace YahyaFarms.Models
         [Column(nameof(CurrentPrice), TypeName = "decimal(8, 3)")]
         [DisplayName("السعر:")]
         public decimal CurrentPrice { get; set; }
+        public virtual ICollection<ItemImage> ItemImages { get; set; } = default!;
+        [NotMapped]
+        public virtual List<string> ImagesUrls { get; set; } = default!;
     }
 }

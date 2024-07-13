@@ -1,0 +1,120 @@
+﻿@page "/items/create"
+
+@using Microsoft.EntityFrameworkCore
+@using YahyaFarms.Models
+@inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@using YahyaFarms.Web.Service.IService;
+@inject IFileUpload iFileUpload;
+@rendermode InteractiveServer
+
+<PageTitle>صنف جديد</PageTitle>
+
+<h1>صنف جديد</h1>
+
+<h4>بيانات الصنف</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Item" OnValidSubmit="AddItem" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <div class="mb-3">
+                <label for="itemname" class="form-label">اسم الصنف:</label>
+                <InputText id="itemname" @bind-Value="Item.ItemName" class="form-control" />
+                <ValidationMessage For="() => Item.ItemName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="itemdescription" class="form-label">الوصف:</label>
+                <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" />
+                <ValidationMessage For="() => Item.ItemDescription" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="currentprice" class="form-label">السعر الحالي:</label>
+                <InputNumber id="currentprice" @bind-Value="Item.CurrentPrice" class="form-control" />
+                <ValidationMessage For="() => Item.CurrentPrice" class="text-danger" />
+            </div>
+            <div class="form-group">
+                <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
+                <div class="row">
+                    @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+                    {
+                        int iSerial = 1;
+                        <table>
+                            @foreach (string imageUrl in Item.ImagesUrls)
+                            {
+                            <tr>
+                                <td>
+                                    <div class="col-md-2 mt-3">
+                                        <img src="@imageUrl" />
+                                        <span class="item-serial">@iSerial</span>
+                                        <button type="button" title="حذف الصورة" class="btn btn-danger mt-1 item-delete">X</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            iSerial++;
+                            }
+                        </table>
+                    }
+                </div>
+
+            </div>
+            <button type="submit" class="btn btn-primary">إدخال</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/items">الرجوع للقائمة السابقة</a>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    public Item Item { get; set; } = new();
+
+    // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
+    public async Task AddItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Item.Add(Item);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/items");
+    }
+    public async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            List<string> images = new();
+            if (e.FileCount > 0)
+            {
+                foreach (var item in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(item.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" || fileInfo.Extension.ToLower() == ".jpeg" || fileInfo.Extension.ToLower() == ".png" || fileInfo.Extension.ToLower() == ".gif" || fileInfo.Extension.ToLower() == ".bmp" || fileInfo.Extension.ToLower() == ".jpe")
+                    {
+                        string uploadedImagePath = await iFileUpload.UploadFile(item);
+                        images.Add(uploadedImagePath);
+                    }
+                    else
+                    {
+                        //     await IJSRuntime.ToastrError("من فضلك اختر ملفات من نوع <br> .jpg, .jpeg, .png, .gif, .bmp, .jpe");
+                        return;
+                    }
+                }
+                if (images.Count > 0)
+                {
+                    if (Item.ImagesUrls == null || Item.ImagesUrls.Count < 1)
+                        Item.ImagesUrls = new List<string>();
+                    Item.ImagesUrls.AddRange(images);
+                }
+                //else
+                //     await IJSRuntime.ToastrError("فشل رفع الملفات");
+            }
+        }
+        catch (Exception ex)
+        {
+            //     await IJSRuntime.ToastrError(ex.Message);
+        }
+    }
+}

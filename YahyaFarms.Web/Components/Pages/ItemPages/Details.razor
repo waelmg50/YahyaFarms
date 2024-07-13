@@ -1,0 +1,51 @@
+﻿@page "/items/details"
+
+@using Microsoft.EntityFrameworkCore
+@using YahyaFarms.Models
+@inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h4>Item</h4>
+    <hr />
+    @if (item is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">ItemName</dt>
+            <dd class="col-sm-10">@item.ItemName</dd>
+            <dt class="col-sm-2">ItemDescription</dt>
+            <dd class="col-sm-10">@item.ItemDescription</dd>
+            <dt class="col-sm-2">CurrentPrice</dt>
+            <dd class="col-sm-10">@item.CurrentPrice</dd>
+        </dl>
+        <div>
+            <a href="@($"/items/edit?itemid={item.ItemID}")">Edit</a> |
+            <a href="@($"/items")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    Item? item;
+
+    [SupplyParameterFromQuery]
+    public int ItemID { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        item = await context.Item.FirstOrDefaultAsync(m => m.ItemID == ItemID);
+
+        if (item is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

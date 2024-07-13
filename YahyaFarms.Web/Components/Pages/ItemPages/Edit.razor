@@ -1,0 +1,101 @@
+﻿@page "/Items/edit"
+
+@using Microsoft.EntityFrameworkCore
+@using YahyaFarms.Models
+@inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>تعديل الصنف</PageTitle>
+
+<h1>تعديل الصنف</h1>
+
+<h4>بيانات الصنف :</h4>
+<hr />
+@if (Item is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Item" OnValidSubmit="UpdateItem" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <input type="hidden" name="Item.ItemID" value="@Item.ItemID" />
+                <div class="mb-3">
+                    <label for="itemname" class="form-label">اسم الصنف:</label>
+                    <InputText id="itemname" @bind-Value="Item.ItemName" class="form-control" />
+                    <ValidationMessage For="() => Item.ItemName" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="itemdescription" class="form-label">الوصف:</label>
+                    <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" />
+                    <ValidationMessage For="() => Item.ItemDescription" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="currentprice" class="form-label">السعر الحالي:</label>
+                    <InputNumber id="currentprice" @bind-Value="Item.CurrentPrice" class="form-control" />
+                    <ValidationMessage For="() => Item.CurrentPrice" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">تعديل</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/items">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public int ItemID { get; set; }
+
+    [SupplyParameterFromForm]
+    public Item? Item { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Item ??= await context.Item.FirstOrDefaultAsync(m => m.ItemID == ItemID);
+
+        if (Item is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see https://aka.ms/RazorPagesCRUD.
+    public async Task UpdateItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Item!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ItemExists(Item!.ItemID))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/items");
+    }
+
+    bool ItemExists(int itemid)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Item.Any(e => e.ItemID == itemid);
+    }
+}

@@ -49,3 +49,28 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+.item-image {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    object-fit: cover;
+    border-radius: 5px;
+    border: solid 2px chocolate;
+}
+
+.item-serial {
+    position: absolute;
+    top: 0;
+    left: 15px;
+    background-color: chocolate;
+    color: white;
+    padding: 0px 6px;
+    border-radius: 5px;
+}
+
+.item-delete {
+    position: absolute;
+    top: -3px;
+    right: 16px;
+    padding: 0px 6px;
+}
