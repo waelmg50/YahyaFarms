@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\YahyaFarms.Common\YahyaFarms.Common.csproj" />
     <ProjectReference Include="..\YahyaFarms.Models\YahyaFarms.Models.csproj" />
   </ItemGroup>
 

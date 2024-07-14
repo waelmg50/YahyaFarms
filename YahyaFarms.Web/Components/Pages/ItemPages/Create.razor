@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @using YahyaFarms.Web.Service.IService;
 @inject IFileUpload iFileUpload;
+@inject IJSRuntime myJSRunTime;
 @rendermode InteractiveServer
 
 <PageTitle>صنف جديد</PageTitle>
@@ -36,34 +37,35 @@
             </div>
             <div class="form-group">
                 <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
-                <div class="row">
+                <br />
+                <div class="row" style="position:relative">
                     @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
                     {
                         int iSerial = 1;
                         <table>
                             @foreach (string imageUrl in Item.ImagesUrls)
                             {
-                            <tr>
-                                <td>
-                                    <div class="col-md-2 mt-3">
-                                        <img src="@imageUrl" />
-                                        <span class="item-serial">@iSerial</span>
-                                        <button type="button" title="حذف الصورة" class="btn btn-danger mt-1 item-delete">X</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            iSerial++;
+                                <tr>
+                                    <td>
+                                        <div class="col-md-2 mt-3" style="position:relative">
+                                            <img class="item-image" src="@imageUrl" />
+                                            <span class="item-serial">@iSerial</span>
+                                            <button type="button" title="حذف الصورة" class="btn btn-danger mt-1 item-delete">X</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                iSerial++;
                             }
                         </table>
                     }
                 </div>
-
             </div>
+            <br />
             <button type="submit" class="btn btn-primary">إدخال</button>
         </EditForm>
     </div>
 </div>
-
+<br />
 <div>
     <a href="/items">الرجوع للقائمة السابقة</a>
 </div>
@@ -77,9 +79,29 @@
     public async Task AddItem()
     {
         using var context = DbFactory.CreateDbContext();
+        if (context.Item.Any(x => x.ItemName == Item.ItemName))
+        {
+            await myJSRunTime.ToastrError("اسم هذا الصنف مسجل من قبل");
+            return;
+        }
         context.Item.Add(Item);
         await context.SaveChangesAsync();
+        Item MyItem = await context.Item.Where(x => x.ItemName == Item.ItemName).FirstOrDefaultAsync();
+        if (MyItem != null)
+        {
+            foreach (string strImage in Item.ImagesUrls)
+            {
+                ItemImage itemImage = new ItemImage()
+                {
+                    ItemID = MyItem.ItemID,
+                    ImageURL = strImage
+                };
+                context.ItemsImages.Add(itemImage);
+            }
+            await context.SaveChangesAsync();
+        }
         NavigationManager.NavigateTo("/items");
+        await myJSRunTime.ToastrSuccess(SD.Success_Operation);
     }
     public async Task UploadImage(InputFileChangeEventArgs e)
     {
@@ -98,7 +120,7 @@
                     }
                     else
                     {
-                        //     await IJSRuntime.ToastrError("من فضلك اختر ملفات من نوع <br> .jpg, .jpeg, .png, .gif, .bmp, .jpe");
+                        await myJSRunTime.ToastrError("من فضلك اختر ملفات من نوع <br> .jpg, .jpeg, .png, .gif, .bmp, .jpe");
                         return;
                     }
                 }
@@ -108,13 +130,13 @@
                         Item.ImagesUrls = new List<string>();
                     Item.ImagesUrls.AddRange(images);
                 }
-                //else
-                //     await IJSRuntime.ToastrError("فشل رفع الملفات");
+                else
+                    await myJSRunTime.ToastrError("فشل رفع الملفات");
             }
         }
         catch (Exception ex)
         {
-            //     await IJSRuntime.ToastrError(ex.Message);
+            await myJSRunTime.ToastrError(ex.Message);
         }
     }
 }

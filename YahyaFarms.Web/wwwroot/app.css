@@ -61,7 +61,7 @@ h1:focus {
 .item-serial {
     position: absolute;
     top: 0;
-    left: 15px;
+    right: 128px;
     background-color: chocolate;
     color: white;
     padding: 0px 6px;
@@ -71,6 +71,6 @@ h1:focus {
 .item-delete {
     position: absolute;
     top: -3px;
-    right: 16px;
+    right: 0px;
     padding: 0px 6px;
 }

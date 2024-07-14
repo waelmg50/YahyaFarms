@@ -17,6 +17,10 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
+builder.Services.AddServerSideBlazor().AddCircuitOptions(option =>
+{
+    option.DetailedErrors = true;
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
