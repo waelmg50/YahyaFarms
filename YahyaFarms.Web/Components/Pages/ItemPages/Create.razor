@@ -2,9 +2,10 @@
 
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
+@using YahyaFarms.Web.Service.IService;
+
 @inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
 @inject NavigationManager NavigationManager
-@using YahyaFarms.Web.Service.IService;
 @inject IFileUpload iFileUpload;
 @inject IJSRuntime myJSRunTime;
 @rendermode InteractiveServer

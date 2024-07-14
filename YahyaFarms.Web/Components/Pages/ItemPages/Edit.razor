@@ -2,8 +2,11 @@
 
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
+@using YahyaFarms.Web.Service.IService;
 @inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IFileUpload iFileUpload;
+@inject IJSRuntime myJSRunTime;
 @rendermode InteractiveServer
 
 <PageTitle>تعديل الصنف</PageTitle>
@@ -14,7 +17,7 @@
 <hr />
 @if (Item is null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>تحميل ...</em></p>
 }
 else
 {
@@ -39,14 +42,40 @@ else
                     <InputNumber id="currentprice" @bind-Value="Item.CurrentPrice" class="form-control" />
                     <ValidationMessage For="() => Item.CurrentPrice" class="text-danger" />
                 </div>
+                <div class="form-group">
+                    <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
+                    <br />
+                    <div class="row" style="position:relative">
+                        @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+                        {
+                            int iSerial = 1;
+                            <table>
+                                @foreach (string imageUrl in Item.ImagesUrls)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="col-md-2 mt-3" style="position:relative">
+                                                <img class="item-image" src="@imageUrl" />
+                                                <span class="item-serial">@iSerial</span>
+                                                <button type="button" title="حذف الصورة" @onclick="()=>DeleteImage(imageUrl)" class="btn btn-danger mt-1 item-delete">X</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    iSerial++;
+                                }
+                            </table>
+                        }
+                    </div>
+                </div>
+                <br />
                 <button type="submit" class="btn btn-primary">تعديل</button>
             </EditForm>
         </div>
     </div>
 }
-
+<br />
 <div>
-    <a href="/items">Back to List</a>
+    <a href="/items">العودة لقائمة الأصناف</a>
 </div>
 
 @code {
@@ -59,8 +88,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        Item ??= await context.Item.FirstOrDefaultAsync(m => m.ItemID == ItemID);
-
+        Item ??= await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        if (Item?.ItemImages != null)
+            Item.ImagesUrls = Item.ItemImages.Select(x => x.ImageURL).ToList();
         if (Item is null)
         {
             NavigationManager.NavigateTo("notfound");
@@ -97,5 +127,57 @@ else
     {
         using var context = DbFactory.CreateDbContext();
         return context.Item.Any(e => e.ItemID == itemid);
+    }
+    public async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            List<string> images = new();
+            if (e.FileCount > 0)
+            {
+                foreach (var item in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(item.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" || fileInfo.Extension.ToLower() == ".jpeg" || fileInfo.Extension.ToLower() == ".png" || fileInfo.Extension.ToLower() == ".gif" || fileInfo.Extension.ToLower() == ".bmp" || fileInfo.Extension.ToLower() == ".jpe")
+                    {
+                        string uploadedImagePath = await iFileUpload.UploadFile(item);
+                        images.Add(uploadedImagePath);
+                    }
+                    else
+                    {
+                        await myJSRunTime.ToastrError("من فضلك اختر ملفات من نوع <br> .jpg, .jpeg, .png, .gif, .bmp, .jpe");
+                        return;
+                    }
+                }
+                if (images.Count > 0)
+                {
+                    if (Item.ImagesUrls == null || Item.ImagesUrls.Count < 1)
+                        Item.ImagesUrls = new List<string>();
+                    Item.ImagesUrls.AddRange(images);
+                }
+                else
+                    await myJSRunTime.ToastrError("فشل رفع الملفات");
+            }
+        }
+        catch (Exception ex)
+        {
+            await myJSRunTime.ToastrError(ex.Message);
+        }
+    }
+    public async Task DeleteImage(string imageUrl)
+    {
+        try
+        {
+            int imageIndex = Item.ImagesUrls.FindIndex(x => x == imageUrl);
+            string imageFileName = imageUrl.Replace("ItemsImages/", string.Empty);
+            bool deleteResult = iFileUpload.DeleteFile(imageFileName);
+            Item.ImagesUrls.RemoveAt(imageIndex);
+            if (deleteResult)
+                await myJSRunTime.ToastrSuccess("تم حذف الصورة بنجاح.");
+        }
+        catch (Exception ex)
+        {
+            await myJSRunTime.ToastrError(ex.Message);
+        }
     }
 }
