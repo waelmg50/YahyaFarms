@@ -46,6 +46,12 @@ else
                     <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
                     <br />
                     <div class="row" style="position:relative">
+                        @if (ShowSpinner)
+                        {
+                            <div class="col-md-12">
+                                <span><i class="fas fa-spinner fa-pulse"></i>من فضلك انتظر <br />جاري تحميل الصور</span>
+                            </div>
+                        }
                         @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
                         {
                             int iSerial = 1;
@@ -85,8 +91,10 @@ else
     [SupplyParameterFromForm]
     public Item? Item { get; set; }
     public List<string> deletedImagesUrls { get; set; } = default!;
+    public bool ShowSpinner { get; set; }
     protected override async Task OnInitializedAsync()
     {
+        ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
         Item ??= await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
         if (Item?.ItemImages != null)
@@ -95,6 +103,7 @@ else
         {
             NavigationManager.NavigateTo("notfound");
         }
+        ShowSpinner = false;
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -180,10 +189,16 @@ else
     {
         try
         {
+            ShowSpinner = true;
             List<string> images = new();
             if (e.FileCount > 0)
             {
-                foreach (var item in e.GetMultipleFiles())
+                if (e.FileCount > 1000)
+                {
+                    await myJSRunTime.ToastrError("لا يمكن رفع أكثر من 1000 ملف !!!");
+                    return;
+                }
+                foreach (var item in e.GetMultipleFiles(1000))
                 {
                     FileInfo fileInfo = new FileInfo(item.Name);
                     if (fileInfo.Extension.ToLower() == ".jpg" || fileInfo.Extension.ToLower() == ".jpeg" || fileInfo.Extension.ToLower() == ".png" || fileInfo.Extension.ToLower() == ".gif" || fileInfo.Extension.ToLower() == ".bmp" || fileInfo.Extension.ToLower() == ".jpe")
@@ -210,6 +225,10 @@ else
         catch (Exception ex)
         {
             await myJSRunTime.ToastrError(ex.Message);
+        }
+        finally
+        {
+            ShowSpinner = false;
         }
     }
     public async Task DeleteImage(string imageUrl)

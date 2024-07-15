@@ -2,9 +2,12 @@
 
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
+@using YahyaFarms.Web.Service.IService;
 @inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
 @inject NavigationManager NavigationManager
-
+@inject IFileUpload iFileUpload;
+@inject IJSRuntime myJSRunTime;
+@rendermode InteractiveServer
 
 <PageTitle>حذف الصنف</PageTitle>
 
@@ -16,9 +19,10 @@
     <hr />
     @if (item is null)
     {
-        <p><em>Loading...</em></p>
+        <p><em>تحميل ...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
             <dt class="col-sm-2">اسم الصنف</dt>
             <dd class="col-sm-10">@item.ItemName</dd>
@@ -35,6 +39,35 @@
             <button type="submit" class="btn btn-danger" disabled="@(item is null)">حذف</button> |
             <a href="/items">العودة للقائمة السابقة</a>
         </EditForm>
+        <br />
+        <div class="form-group">
+            <div class="row" style="position:relative">
+                @if (ShowSpinner)
+                {
+                    <div class="col-md-12">
+                        <span><i class="fas fa-spinner fa-pulse"></i>من فضلك انتظر <br />جاري تحميل الصور</span>
+                    </div>
+                }
+                @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
+                {
+                    int iSerial = 1;
+                    <table>
+                        @foreach (string imageUrl in item.ImagesUrls)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="col-md-2 mt-3" style="position:relative">
+                                        <img class="item-image" src="@imageUrl" />
+                                        <span class="item-serial">@iSerial</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            iSerial++;
+                        }
+                    </table>
+                }
+            </div>
+        </div>
     }
 </div>
 
@@ -43,23 +76,38 @@
 
     [SupplyParameterFromQuery]
     public int ItemID { get; set; }
-
+    bool ShowSpinner;
     protected override async Task OnInitializedAsync()
     {
+        ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
-        item = await context.Item.FirstOrDefaultAsync(m => m.ItemID == ItemID);
-
+        item = await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        if (item?.ItemImages != null)
+            item!.ImagesUrls = item.ItemImages.Select(x => x.ImageURL).ToList();
         if (item is null)
         {
             NavigationManager.NavigateTo("notfound");
         }
+        ShowSpinner = false;
     }
 
     public async Task DeleteItem()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Item.Remove(item!);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/items");
+        if (await myJSRunTime.ConfirmDelete())
+        {
+            using var context = DbFactory.CreateDbContext();
+            if (item!.ImagesUrls != null && item.ImagesUrls.Count > 0)
+            {
+                foreach (string imageUrl in item.ImagesUrls)
+                {
+                    string imageFileName = imageUrl.Replace("ItemsImages/", string.Empty);
+                    iFileUpload.DeleteFile(imageFileName);
+                }
+            }
+            context.Item.Remove(item!);
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/items");
+            await myJSRunTime.ToastrSuccess("تم حذف الصنف بنجاح.");
+        }
     }
 }

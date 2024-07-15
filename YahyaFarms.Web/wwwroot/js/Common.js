@@ -13,7 +13,7 @@ SwalConfirm = () => {
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: 'نعم أكمل الحذف'
         }).then((result) => {
             resolve(result.isConfirmed);
         })
