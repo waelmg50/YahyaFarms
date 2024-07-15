@@ -84,7 +84,7 @@ else
 
     [SupplyParameterFromForm]
     public Item? Item { get; set; }
-
+    public List<string> deletedImagesUrls { get; set; } = default!;
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
@@ -102,8 +102,56 @@ else
     public async Task UpdateItem()
     {
         using var context = DbFactory.CreateDbContext();
+        if (context.Item.Any(x => x.ItemName == Item!.ItemName && x.ItemID != x.ItemID))
+        {
+            await myJSRunTime.ToastrError("اسم هذا الصنف مسجل من قبل");
+            return;
+        }
+        if (Item!.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+        {
+            if (deletedImagesUrls != null && deletedImagesUrls.Count > 0)
+            {
+                foreach (string imageUrl in deletedImagesUrls)
+                {
+                    string imageFileName = imageUrl.Replace("ItemsImages/", string.Empty);
+                    iFileUpload.DeleteFile(imageFileName);
+                    ItemImage itemImage = await context.ItemsImages.Where(x => x.ImageURL == imageUrl).FirstOrDefaultAsync() ?? new ItemImage();
+                    if (itemImage != null && itemImage.ImageID > 0)
+                    {
+                        context.ItemsImages.Remove(itemImage);
+                        try
+                        {
+                            await context.SaveChangesAsync();
+                        }
+                        catch (DbUpdateConcurrencyException)
+                        {
+                            if (!ItemExists(Item!.ItemID))
+                            {
+                                NavigationManager.NavigateTo("notfound");
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+                    }
+                    //ItemImage itemImage = await context.ItemsImages.Where(x => x.ImageURL == imageUrl).FirstOrDefaultAsync() ?? new ItemImage();
+                }
+            }
+            if (Item.ItemImages == null)
+                Item.ItemImages = new List<ItemImage>();
+            foreach (string strImage in Item.ImagesUrls)
+            {
+                if (Item.ItemImages.Any(x => x.ImageURL == strImage))
+                    continue;
+                ItemImage itemImage = new ItemImage()
+                    {
+                        ImageURL = strImage
+                    };
+                Item.ItemImages.Add(itemImage);
+            }
+        }
         context.Attach(Item!).State = EntityState.Modified;
-
         try
         {
             await context.SaveChangesAsync();
@@ -119,8 +167,8 @@ else
                 throw;
             }
         }
-
         NavigationManager.NavigateTo("/items");
+        await myJSRunTime.ToastrSuccess("تم التعديل بنجاح.");
     }
 
     bool ItemExists(int itemid)
@@ -151,7 +199,7 @@ else
                 }
                 if (images.Count > 0)
                 {
-                    if (Item.ImagesUrls == null || Item.ImagesUrls.Count < 1)
+                    if (Item!.ImagesUrls == null || Item.ImagesUrls.Count < 1)
                         Item.ImagesUrls = new List<string>();
                     Item.ImagesUrls.AddRange(images);
                 }
@@ -168,12 +216,11 @@ else
     {
         try
         {
-            int imageIndex = Item.ImagesUrls.FindIndex(x => x == imageUrl);
-            string imageFileName = imageUrl.Replace("ItemsImages/", string.Empty);
-            bool deleteResult = iFileUpload.DeleteFile(imageFileName);
+            deletedImagesUrls ??= new List<string>();
+            deletedImagesUrls.Add(imageUrl);
+            int imageIndex = Item!.ImagesUrls.FindIndex(x => x == imageUrl);
             Item.ImagesUrls.RemoveAt(imageIndex);
-            if (deleteResult)
-                await myJSRunTime.ToastrSuccess("تم حذف الصورة بنجاح.");
+            await myJSRunTime.ToastrSuccess("تم حذف الصورة بنجاح.");
         }
         catch (Exception ex)
         {
