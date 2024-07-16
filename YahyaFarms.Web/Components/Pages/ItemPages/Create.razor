@@ -18,23 +18,59 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <EditForm method="post" Model="Item" OnValidSubmit="AddItem" FormName="create" Enhance>
+        <EditForm method="post" Model="item" OnValidSubmit="AddItem" FormName="create" Enhance>
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
             <div class="mb-3">
                 <label for="itemname" class="form-label">اسم الصنف:</label>
-                <InputText id="itemname" @bind-Value="Item.ItemName" class="form-control" />
-                <ValidationMessage For="() => Item.ItemName" class="text-danger" />
+                <InputText id="itemname" @bind-Value="item.ItemName" class="form-control" />
+                <ValidationMessage For="() => item.ItemName" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <div class="mb-3" style="height:200px">
                 <label for="itemdescription" class="form-label">الوصف:</label>
-                <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" />
-                <ValidationMessage For="() => Item.ItemDescription" class="text-danger" />
+                <BlazoredTextEditor @ref="@QuillHtml" Placeholder="من فضلك أدخل وصف الصنف">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-color"></select>
+                            <select class="ql-background"></select>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-list" value="ordered"></button>
+                            <button class="ql-list" value="bullet"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-link"></button>
+                        </span>
+                    </ToolbarContent>
+                    <EditorContent>
+                        @* <h4>This Toolbar works with HTML</h4>
+                        <a href="http://BlazorHelpWebsite.com">
+                            BlazorHelpWebsite.com
+                        </a> *@
+                    </EditorContent>
+                </BlazoredTextEditor>
+                @* <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" /> *@
+                <ValidationMessage For="() => item.ItemDescription" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <br />
+            <div class="mb-3" style="padding-top:75px">
                 <label for="currentprice" class="form-label">السعر الحالي:</label>
-                <InputNumber id="currentprice" @bind-Value="Item.CurrentPrice" class="form-control" />
-                <ValidationMessage For="() => Item.CurrentPrice" class="text-danger" />
+                <InputNumber id="currentprice" @bind-Value="item.CurrentPrice" class="form-control" />
+                <ValidationMessage For="() => item.CurrentPrice" class="text-danger" />
             </div>
             <div class="form-group">
                 <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
@@ -46,11 +82,11 @@
                             <span><i class="fas fa-spinner fa-pulse"></i>من فضلك انتظر <br />جاري تحميل الصور</span>
                         </div>
                     }
-                    @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+                    @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
                     {
                         int iSerial = 1;
                         <table>
-                            @foreach (string imageUrl in Item.ImagesUrls)
+                            @foreach (string imageUrl in item.ImagesUrls)
                             {
                                 <tr>
                                     <td>
@@ -80,30 +116,32 @@
 @code {
 
     [SupplyParameterFromForm]
-    public Item Item { get; set; } = new();
+    public Item item { get; set; } = new();
     public bool ShowSpinner { get; set; }
+    public BlazoredTextEditor QuillHtml { get; set; } = default!;
     // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
     public async Task AddItem()
     {
         using var context = DbFactory.CreateDbContext();
-        if (context.Item.Any(x => x.ItemName == Item.ItemName))
+        if (context.Item.Any(x => x.ItemName == item.ItemName))
         {
             await myJSRunTime.ToastrError("اسم هذا الصنف مسجل من قبل");
             return;
         }
-        if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+        item.ItemDescription = await QuillHtml.GetHTML();
+        if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
         {
-            Item.ItemImages = new List<ItemImage>();
-            foreach (string strImage in Item.ImagesUrls)
+            item.ItemImages = new List<ItemImage>();
+            foreach (string strImage in item.ImagesUrls)
             {
                 ItemImage itemImage = new ItemImage()
                     {
                         ImageURL = strImage
                     };
-                Item.ItemImages.Add(itemImage);
+                item.ItemImages.Add(itemImage);
             }
         }
-        context.Item.Add(Item);
+        context.Item.Add(item);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/items");
         await myJSRunTime.ToastrSuccess(SD.Success_Operation);
@@ -137,9 +175,9 @@
                 }
                 if (images.Count > 0)
                 {
-                    if (Item.ImagesUrls == null || Item.ImagesUrls.Count < 1)
-                        Item.ImagesUrls = new List<string>();
-                    Item.ImagesUrls.AddRange(images);
+                    if (item.ImagesUrls == null || item.ImagesUrls.Count < 1)
+                        item.ImagesUrls = new List<string>();
+                    item.ImagesUrls.AddRange(images);
                 }
                 else
                     await myJSRunTime.ToastrError("فشل رفع الملفات");
@@ -158,10 +196,10 @@
     {
         try
         {
-            int imageIndex = Item.ImagesUrls.FindIndex(x => x == imageUrl);
+            int imageIndex = item.ImagesUrls.FindIndex(x => x == imageUrl);
             string imageFileName = imageUrl.Replace("ItemsImages/", string.Empty);
             bool deleteResult = iFileUpload.DeleteFile(imageFileName);
-            Item.ImagesUrls.RemoveAt(imageIndex);
+            item.ImagesUrls.RemoveAt(imageIndex);
             if (deleteResult)
                 await myJSRunTime.ToastrSuccess("تم حذف الصورة بنجاح.");
         }

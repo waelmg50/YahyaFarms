@@ -74,3 +74,6 @@ h1:focus {
     right: 0px;
     padding: 0px 6px;
 }
+.swal-modal .swal-text {
+    text-align: center;
+}

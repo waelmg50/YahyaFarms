@@ -25,7 +25,6 @@
             </div>
         </ColumnOptions>
     </PropertyColumn>
-    <PropertyColumn Property="item => item.ItemDescription" title="الوصف" />
     <PropertyColumn Property="item => item.CurrentPrice" title="السعر" />
     <TemplateColumn Context="item">
         <a href="@($"items/edit?itemid={item.ItemID}")">تعديل</a> |

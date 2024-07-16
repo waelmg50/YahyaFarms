@@ -15,7 +15,7 @@
 
 <h4>بيانات الصنف :</h4>
 <hr />
-@if (Item is null)
+@if (item is null)
 {
     <p><em>تحميل ...</em></p>
 }
@@ -23,24 +23,60 @@ else
 {
     <div class="row">
         <div class="col-md-4">
-            <EditForm method="post" Model="Item" OnValidSubmit="UpdateItem" FormName="edit" Enhance>
+            <EditForm method="post" Model="item" OnValidSubmit="UpdateItem" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-                <input type="hidden" name="Item.ItemID" value="@Item.ItemID" />
+                <input type="hidden" name="Item.ItemID" value="@item.ItemID" />
                 <div class="mb-3">
                     <label for="itemname" class="form-label">اسم الصنف:</label>
-                    <InputText id="itemname" @bind-Value="Item.ItemName" class="form-control" />
-                    <ValidationMessage For="() => Item.ItemName" class="text-danger" />
+                    <InputText id="itemname" @bind-Value="item.ItemName" class="form-control" />
+                    <ValidationMessage For="() => item.ItemName" class="text-danger" />
                 </div>
-                <div class="mb-3">
+                <div class="mb-3" style="height:200px">
                     <label for="itemdescription" class="form-label">الوصف:</label>
-                    <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" />
-                    <ValidationMessage For="() => Item.ItemDescription" class="text-danger" />
+                    <BlazoredTextEditor @ref="@QuillHtml" Placeholder="من فضلك أدخل وصف الصنف">
+                        <ToolbarContent>
+                            <select class="ql-header">
+                                <option selected=""></option>
+                                <option value="1"></option>
+                                <option value="2"></option>
+                                <option value="3"></option>
+                                <option value="4"></option>
+                                <option value="5"></option>
+                            </select>
+                            <span class="ql-formats">
+                                <button class="ql-bold"></button>
+                                <button class="ql-italic"></button>
+                                <button class="ql-underline"></button>
+                                <button class="ql-strike"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <select class="ql-color"></select>
+                                <select class="ql-background"></select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered"></button>
+                                <button class="ql-list" value="bullet"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link"></button>
+                            </span>
+                        </ToolbarContent>
+                        <EditorContent>
+                            @* <h4>This Toolbar works with HTML</h4>
+                        <a href="http://BlazorHelpWebsite.com">
+                        BlazorHelpWebsite.com
+                        </a> *@
+                        </EditorContent>
+                    </BlazoredTextEditor>
+                    @* <InputText id="itemdescription" @bind-Value="Item.ItemDescription" class="form-control" /> *@
+                    <ValidationMessage For="() => item.ItemDescription" class="text-danger" />
                 </div>
-                <div class="mb-3">
+                <br />
+                <div class="mb-3" style="padding-top:75px">
                     <label for="currentprice" class="form-label">السعر الحالي:</label>
-                    <InputNumber id="currentprice" @bind-Value="Item.CurrentPrice" class="form-control" />
-                    <ValidationMessage For="() => Item.CurrentPrice" class="text-danger" />
+                    <InputNumber id="currentprice" @bind-Value="item.CurrentPrice" class="form-control" />
+                    <ValidationMessage For="() => item.CurrentPrice" class="text-danger" />
                 </div>
                 <div class="form-group">
                     <InputFile title="إضافة الصور" OnChange="@UploadImage" multiple></InputFile>
@@ -52,11 +88,11 @@ else
                                 <span><i class="fas fa-spinner fa-pulse"></i>من فضلك انتظر <br />جاري تحميل الصور</span>
                             </div>
                         }
-                        @if (Item.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+                        @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
                         {
                             int iSerial = 1;
                             <table>
-                                @foreach (string imageUrl in Item.ImagesUrls)
+                                @foreach (string imageUrl in item.ImagesUrls)
                                 {
                                     <tr>
                                         <td>
@@ -89,34 +125,57 @@ else
     public int ItemID { get; set; }
 
     [SupplyParameterFromForm]
-    public Item? Item { get; set; }
+    public Item? item { get; set; }
     public List<string> deletedImagesUrls { get; set; } = default!;
     public bool ShowSpinner { get; set; }
+    public BlazoredTextEditor QuillHtml { get; set; } = default!;
     protected override async Task OnInitializedAsync()
     {
         ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
-        Item ??= await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
-        if (Item?.ItemImages != null)
-            Item.ImagesUrls = Item.ItemImages.Select(x => x.ImageURL).ToList();
-        if (Item is null)
+        item ??= await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        if (item?.ItemImages != null)
+            item.ImagesUrls = item.ItemImages.Select(x => x.ImageURL).ToList();
+        if (item is null)
         {
             NavigationManager.NavigateTo("notfound");
         }
         ShowSpinner = false;
     }
-
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        bool loadingItemDescriptionHTML = true;
+        while (loadingItemDescriptionHTML)
+        {
+            try
+            {
+                if (firstRender && !string.IsNullOrWhiteSpace(item!.ItemDescription))
+                {
+                    await QuillHtml.LoadHTMLContent(item.ItemDescription);
+                    loadingItemDescriptionHTML = false;
+                }
+            }
+            catch
+            {
+                await Task.Delay(10);
+                loadingItemDescriptionHTML = true;
+            }
+        }
+    }
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more details, see https://aka.ms/RazorPagesCRUD.
     public async Task UpdateItem()
     {
         using var context = DbFactory.CreateDbContext();
-        if (context.Item.Any(x => x.ItemName == Item!.ItemName && x.ItemID != x.ItemID))
+        if (context.Item.Any(x => x.ItemName == item!.ItemName && x.ItemID != x.ItemID))
         {
             await myJSRunTime.ToastrError("اسم هذا الصنف مسجل من قبل");
             return;
         }
-        if (Item!.ImagesUrls != null && Item.ImagesUrls.Count > 0)
+        item!.ItemDescription = await QuillHtml.GetHTML();
+        if (item!.ImagesUrls != null && item.ImagesUrls.Count > 0)
         {
             if (deletedImagesUrls != null && deletedImagesUrls.Count > 0)
             {
@@ -134,7 +193,7 @@ else
                         }
                         catch (DbUpdateConcurrencyException)
                         {
-                            if (!ItemExists(Item!.ItemID))
+                            if (!ItemExists(item!.ItemID))
                             {
                                 NavigationManager.NavigateTo("notfound");
                             }
@@ -147,27 +206,27 @@ else
                     //ItemImage itemImage = await context.ItemsImages.Where(x => x.ImageURL == imageUrl).FirstOrDefaultAsync() ?? new ItemImage();
                 }
             }
-            if (Item.ItemImages == null)
-                Item.ItemImages = new List<ItemImage>();
-            foreach (string strImage in Item.ImagesUrls)
+            if (item.ItemImages == null)
+                item.ItemImages = new List<ItemImage>();
+            foreach (string strImage in item.ImagesUrls)
             {
-                if (Item.ItemImages.Any(x => x.ImageURL == strImage))
+                if (item.ItemImages.Any(x => x.ImageURL == strImage))
                     continue;
                 ItemImage itemImage = new ItemImage()
                     {
                         ImageURL = strImage
                     };
-                Item.ItemImages.Add(itemImage);
+                item.ItemImages.Add(itemImage);
             }
         }
-        context.Attach(Item!).State = EntityState.Modified;
+        context.Attach(item!).State = EntityState.Modified;
         try
         {
             await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!ItemExists(Item!.ItemID))
+            if (!ItemExists(item!.ItemID))
             {
                 NavigationManager.NavigateTo("notfound");
             }
@@ -214,9 +273,9 @@ else
                 }
                 if (images.Count > 0)
                 {
-                    if (Item!.ImagesUrls == null || Item.ImagesUrls.Count < 1)
-                        Item.ImagesUrls = new List<string>();
-                    Item.ImagesUrls.AddRange(images);
+                    if (item!.ImagesUrls == null || item.ImagesUrls.Count < 1)
+                        item.ImagesUrls = new List<string>();
+                    item.ImagesUrls.AddRange(images);
                 }
                 else
                     await myJSRunTime.ToastrError("فشل رفع الملفات");
@@ -237,8 +296,8 @@ else
         {
             deletedImagesUrls ??= new List<string>();
             deletedImagesUrls.Add(imageUrl);
-            int imageIndex = Item!.ImagesUrls.FindIndex(x => x == imageUrl);
-            Item.ImagesUrls.RemoveAt(imageIndex);
+            int imageIndex = item!.ImagesUrls.FindIndex(x => x == imageUrl);
+            item.ImagesUrls.RemoveAt(imageIndex);
             await myJSRunTime.ToastrSuccess("تم حذف الصورة بنجاح.");
         }
         catch (Exception ex)
