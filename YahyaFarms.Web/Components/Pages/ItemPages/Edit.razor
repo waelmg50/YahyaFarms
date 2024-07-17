@@ -90,20 +90,24 @@ else
                         }
                         @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
                         {
-                            int iSerial = 1;
+                            int iSerial = 1, iRowCount = item.ImagesUrls.Count % 6 == 0 ? (item.ImagesUrls.Count / 6) : (item.ImagesUrls.Count / 6) + 1;
                             <table>
-                                @foreach (string imageUrl in item.ImagesUrls)
+                                @for (int iRow = 0; iRow < iRowCount; iRow++)
                                 {
                                     <tr>
-                                        <td>
-                                            <div class="col-md-2 mt-3" style="position:relative">
-                                                <img class="item-image" src="@imageUrl" />
-                                                <span class="item-serial">@iSerial</span>
-                                                <button type="button" title="حذف الصورة" @onclick="()=>DeleteImage(imageUrl)" class="btn btn-danger mt-1 item-delete">X</button>
-                                            </div>
-                                        </td>
+                                        @for (int iColumn = 0; iColumn < 6 && iSerial <= item.ImagesUrls.Count; iColumn++)
+                                        {
+                                            string imageUrl = item.ImagesUrls[iSerial - 1];
+                                            <td>
+                                                <div class="col-md-2 mt-3" style="position:relative">
+                                                    <img class="item-image" src="@imageUrl" />
+                                                    <span class="item-serial">@iSerial</span>
+                                                    <button type="button" title="حذف الصورة" @onclick="()=>DeleteImage(imageUrl)" class="btn btn-danger mt-1 item-delete">X</button>
+                                                </div>
+                                            </td>
+                                            iSerial++;
+                                        }
                                     </tr>
-                                    iSerial++;
                                 }
                             </table>
                         }
@@ -133,7 +137,7 @@ else
     {
         ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
-        item ??= await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        item ??= await context.Items.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
         if (item?.ItemImages != null)
             item.ImagesUrls = item.ItemImages.Select(x => x.ImageURL).ToList();
         if (item is null)
@@ -169,7 +173,7 @@ else
     public async Task UpdateItem()
     {
         using var context = DbFactory.CreateDbContext();
-        if (context.Item.Any(x => x.ItemName == item!.ItemName && x.ItemID != x.ItemID))
+        if (context.Items.Any(x => x.ItemName == item!.ItemName && x.ItemID != x.ItemID))
         {
             await myJSRunTime.ToastrError("اسم هذا الصنف مسجل من قبل");
             return;
@@ -242,7 +246,7 @@ else
     bool ItemExists(int itemid)
     {
         using var context = DbFactory.CreateDbContext();
-        return context.Item.Any(e => e.ItemID == itemid);
+        return context.Items.Any(e => e.ItemID == itemid);
     }
     public async Task UploadImage(InputFileChangeEventArgs e)
     {

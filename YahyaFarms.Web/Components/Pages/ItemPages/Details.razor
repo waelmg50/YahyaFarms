@@ -5,29 +5,69 @@
 @inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Details</PageTitle>
+<PageTitle>تفاصيل الصنف</PageTitle>
 
-<h1>Details</h1>
+<h1>تفاصيل الصنف</h1>
 
 <div>
-    <h4>Item</h4>
+    <h4>بيانات الصنف</h4>
     <hr />
     @if (item is null)
     {
-        <p><em>Loading...</em></p>
+        <p><em>تحميل...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
-            <dt class="col-sm-2">ItemName</dt>
+            <dt class="col-sm-2">الاسم</dt>
             <dd class="col-sm-10">@item.ItemName</dd>
-            <dt class="col-sm-2">ItemDescription</dt>
-            <dd class="col-sm-10">@item.ItemDescription</dd>
-            <dt class="col-sm-2">CurrentPrice</dt>
+            <dt class="col-sm-2">الوصف</dt>
+            <dd class="col-sm-10">
+                <div class="row">
+                    @item.ItemDescription
+                </div>
+            </dd>
+            <dt class="col-sm-2">السعر الحالي</dt>
             <dd class="col-sm-10">@item.CurrentPrice</dd>
         </dl>
         <div>
-            <a href="@($"/items/edit?itemid={item.ItemID}")">Edit</a> |
-            <a href="@($"/items")">Back to List</a>
+            <a href="@($"/items/edit?itemid={item.ItemID}")">تعديل</a> |
+            <a href="@($"/items")">العودة لقائمة الأصناف</a>
+        </div>
+        <br />
+        <div class="form-group">
+            <div class="row" style="position:relative">
+                @if (ShowSpinner)
+                {
+                    <div class="col-md-12">
+                        <span><i class="fas fa-spinner fa-pulse"></i>من فضلك انتظر <br />جاري تحميل الصور</span>
+                    </div>
+                }
+                @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
+                {
+                    int iSerial = 1, iRowCount = item.ImagesUrls.Count % 6 == 0 ? (item.ImagesUrls.Count / 6) : (item.ImagesUrls.Count / 6) + 1;
+                    <table>
+                        @for (int iRow = 0; iRow < iRowCount; iRow++)
+                        {
+                            <tr>
+                                @for (int iColumn = 0; iColumn < 6 && iSerial <= item.ImagesUrls.Count; iColumn++)
+                                {
+                                    string imageUrl = item.ImagesUrls[iSerial - 1];
+                                    <td>
+                                        <div class="col-md-2 mt-3" style="position:relative">
+                                            <a href="@imageUrl" target="_blank">
+                                                <img class="item-image" src="@imageUrl" />
+                                            </a>
+                                            @* <span class="item-serial">@iSerial</span> *@
+                                        </div>
+                                    </td>
+                                    iSerial++;
+                                }
+                            </tr>
+                        }
+                    </table>
+                }
+            </div>
         </div>
     }
 </div>
@@ -37,15 +77,18 @@
 
     [SupplyParameterFromQuery]
     public int ItemID { get; set; }
-
+    bool ShowSpinner;
     protected override async Task OnInitializedAsync()
     {
+        ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
-        item = await context.Item.FirstOrDefaultAsync(m => m.ItemID == ItemID);
-
+        item = await context.Items.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        if (item?.ItemImages != null)
+            item!.ImagesUrls = item.ItemImages.Select(x => x.ImageURL).ToList();
         if (item is null)
         {
             NavigationManager.NavigateTo("notfound");
         }
+        ShowSpinner = false;
     }
 }

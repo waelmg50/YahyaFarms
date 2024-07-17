@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YahyaFarms.Web.Data;
 
@@ -11,9 +12,11 @@ using YahyaFarms.Web.Data;
 namespace YahyaFarms.Web.Migrations
 {
     [DbContext(typeof(YahyaFarmsWebDbContext))]
-    partial class YahyaFarmsWebDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240717120832_Fix_Items_Table_Name")]
+    partial class Fix_Items_Table_Name
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

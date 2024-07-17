@@ -39,6 +39,5 @@
 @code {
     string filterName = string.Empty;
     PaginationState pagination = new PaginationState() { ItemsPerPage = 50 };
-    IQueryable<Item> ItemsSearch => DB.Item.Where(x => x.ItemName.Contains(filterName));
-    
+    IQueryable<Item> ItemsSearch => DB.Items.Where(x => x.ItemName.Contains(filterName));
 }

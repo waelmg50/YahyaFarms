@@ -50,19 +50,23 @@
                 }
                 @if (item.ImagesUrls != null && item.ImagesUrls.Count > 0)
                 {
-                    int iSerial = 1;
+                    int iSerial = 1, iRowCount = item.ImagesUrls.Count % 6 == 0 ? (item.ImagesUrls.Count / 6) : (item.ImagesUrls.Count / 6) + 1;
                     <table>
-                        @foreach (string imageUrl in item.ImagesUrls)
+                        @for (int iRow = 0; iRow < iRowCount; iRow++)
                         {
                             <tr>
-                                <td>
-                                    <div class="col-md-2 mt-3" style="position:relative">
-                                        <img class="item-image" src="@imageUrl" />
-                                        <span class="item-serial">@iSerial</span>
-                                    </div>
-                                </td>
+                                @for (int iColumn = 0; iColumn < 6 && iSerial <= item.ImagesUrls.Count; iColumn++)
+                                {
+                                    string imageUrl = item.ImagesUrls[iSerial - 1];
+                                    <td>
+                                        <div class="col-md-2 mt-3" style="position:relative">
+                                            <img class="item-image" src="@imageUrl" />
+                                            <span class="item-serial">@iSerial</span>
+                                        </div>
+                                    </td>
+                                    iSerial++;
+                                }
                             </tr>
-                            iSerial++;
                         }
                     </table>
                 }
@@ -81,7 +85,7 @@
     {
         ShowSpinner = true;
         using var context = DbFactory.CreateDbContext();
-        item = await context.Item.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
+        item = await context.Items.Include(x => x.ItemImages).FirstOrDefaultAsync(m => m.ItemID == ItemID);
         if (item?.ItemImages != null)
             item!.ImagesUrls = item.ItemImages.Select(x => x.ImageURL).ToList();
         if (item is null)
@@ -104,7 +108,7 @@
                     iFileUpload.DeleteFile(imageFileName);
                 }
             }
-            context.Item.Remove(item!);
+            context.Items.Remove(item!);
             await context.SaveChangesAsync();
             NavigationManager.NavigateTo("/items");
             await myJSRunTime.ToastrSuccess("تم حذف الصنف بنجاح.");
