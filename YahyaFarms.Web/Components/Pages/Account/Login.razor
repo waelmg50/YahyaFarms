@@ -1,0 +1,63 @@
+﻿@page "/Login"
+@using System.Security.Claims;
+@using Microsoft.AspNetCore.Authentication;
+@using Microsoft.AspNetCore.Authentication.Cookies;
+@using YahyaFarms.Web.Components.Pages.ViewModel;
+@using Microsoft.AspNetCore.Authentication.Abstractions;
+@using Microsoft.AspNetCore.Http;
+@inject YahyaFarms.Web.Data.YahyaFarmsWebDbContext DB;
+@inject NavigationManager navigationManager;
+
+<div class="row">
+    <div class="col-lg-4 offset-lg-4 pt-4 border">
+        <EditForm Model="@loginModel" OnValidSubmit="AuthinticateUser" FormName="LoginForm">
+            <DataAnnotationsValidator />
+            <div class="mb-3 text-center flex-column">
+                <img src="images/logo_small.png" />
+                <h3>تسجيل الدخول</h3>
+            </div>
+            <div class="mb-3">
+                <label>اسم المستخدم</label>
+                <InputText @bind-Value=loginModel.UserName class="form-control" placeholder="اسم المستخدم" />
+                <ValidationMessage For="() => loginModel.UserName" />
+            </div>
+            <div class="mb-3">
+                <label>كلمة المرور</label>
+                <InputText @bind-Value=loginModel.Password class="form-control" type="password" placeholder="كلمة المرور" />
+                <ValidationMessage For="() => loginModel.Password" />
+            </div>
+            <div class="mb-3 text-center">
+                <span class="text-danger">@ErrorMessage</span>
+            </div>
+            <div class="mb-3 d-grid gap-2">
+                <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext myContext { get; set; } = default!;
+    [SupplyParameterFromForm]
+    public LoginViewModel loginModel { get; set; } = new();
+    public string ErrorMessage { get; set; } = default!;
+    async Task AuthinticateUser()
+    {
+        var loggedUser = DB.AdminUsers.Where(x => x.UserName == loginModel.UserName).FirstOrDefault();
+        if (loggedUser == null || loggedUser.Password != loginModel.Password)
+            ErrorMessage = "هناك خطأ في اسم المستخدم أو كلمة المرور";
+        else
+        {
+            var Claims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, loggedUser.UserName),
+                new Claim(ClaimTypes.Role, loggedUser.Role),
+            };
+            var identity = new ClaimsIdentity(Claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var princepal = new ClaimsPrincipal(identity);
+            await myContext.SignInAsync(princepal);
+            navigationManager.NavigateTo("/");
+        }
+    }
+}

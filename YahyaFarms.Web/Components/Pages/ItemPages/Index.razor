@@ -12,11 +12,13 @@
 <PageTitle>الأصناف</PageTitle>
 
 <h1>الأصناف</h1>
-
-<p>
-    <a href="items/create">جديد</a>
-</p>
-
+<AuthorizeView>
+    <Authorized>
+        <p>
+            <a href="items/create">جديد</a>
+        </p>
+    </Authorized>
+</AuthorizeView>
 <QuickGrid Class="table" Items="ItemsSearch">
     <PropertyColumn Property="item => item.ItemName" title="اسم الصنف" Sortable="true">
         <ColumnOptions>
@@ -27,9 +29,17 @@
     </PropertyColumn>
     <PropertyColumn Property="item => item.CurrentPrice" title="السعر" />
     <TemplateColumn Context="item">
-        <a href="@($"items/edit?itemid={item.ItemID}")">تعديل</a> |
-        <a href="@($"items/details?itemid={item.ItemID}")">التفاصيل</a> |
-        <a href="@($"items/delete?itemid={item.ItemID}")">حذف</a>
+        <AuthorizeView>
+            <Authorized>
+                <a href="@($"items/edit?itemid={item.ItemID}")">تعديل</a> |
+            </Authorized>
+        </AuthorizeView>
+        <a href="@($"items/details?itemid={item.ItemID}")">التفاصيل</a>
+        <AuthorizeView>
+            <Authorized>
+                | <a href="@($"items/delete?itemid={item.ItemID}")">حذف</a>
+            </Authorized>
+        </AuthorizeView>
     </TemplateColumn>
 </QuickGrid>
 

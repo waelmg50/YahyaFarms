@@ -1,11 +1,13 @@
 ﻿@page "/"
 @inject YahyaFarms.Web.Data.YahyaFarmsWebDbContext DB
-<PageTitle>مزرعة يحيى</PageTitle>
+<PageTitle>Yahya Farm</PageTitle>
 
-<h1>أهلا بكم في موقع مزرعة يحيى</h1>
+<h2>أهلا بكم في موقع </h2>
+<h1>Yahya Farm</h1>
 <p>
-    مرزعة يحيى ...أطعم لحمة ممكن تدوقها في مصر
+    أطعم لحمة ممكن تدوقها في مصر
 </p>
+
 <div class="row" style="position:relative">
     @if (lstFirstItemsImages != null && lstFirstItemsImages.Count > 0)
     {
@@ -25,14 +27,14 @@
 @* <div width="100%">
     @if (lstSecondItemsImages != null && lstSecondItemsImages.Count > 0)
     {
-        <marquee direction="right" behavior='alternate' hspace="20px"> 
+        <marquee direction="right" behavior='alternate' hspace="20px">
         @foreach (string strImage in lstSecondItemsImages)
         {
             <a href="@strImage" target="_blank">
                 <img class="item-image" src="@strImage" />
             </a>
         }
-        </marquee> 
+        </marquee>
     }
 </div> *@
 @code {
@@ -40,7 +42,7 @@
     //List<string> lstSecondItemsImages = new List<string>();
     protected override void OnInitialized()
     {
-        lstFirstItemsImages = DB.ItemsImages.Skip(0).Take(24).OrderByDescending(x => x.ImageID).Select(x => x.ImageURL).ToList();
+        lstFirstItemsImages = DB.ItemsImages.OrderByDescending(x => x.ImageID).Skip(0).Take(24).Select(x => x.ImageURL).ToList();
         //lstSecondItemsImages = DB.ItemsImages.Skip(20).Take(20).OrderBy(x => x.ImageID).Select(x => x.ImageURL).ToList();
     }
 }

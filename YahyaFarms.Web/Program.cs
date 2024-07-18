@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using YahyaFarms.Web.Data;
 using YahyaFarms.Web.Service.IService;
 using YahyaFarms.Web.Service;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<YahyaFarmsWebDbContext>(options =>
@@ -12,7 +13,15 @@ builder.Services.AddDbContextFactory<YahyaFarmsWebDbContext>(options =>
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => 
+{
+    options.Cookie.Name = "auth_token";
+    options.LoginPath = "/Login";
+    options.Cookie.MaxAge = TimeSpan.FromDays(14);
+    options.AccessDeniedPath = "/Access_Denied";
+});
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -36,7 +45,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
-
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 using (var scope = app.Services.CreateScope())

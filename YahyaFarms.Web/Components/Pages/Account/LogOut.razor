@@ -1,0 +1,31 @@
+﻿@page "/LogOut"
+@using Microsoft.AspNetCore.Authentication
+@inject NavigationManager navigationManager
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body flex-column">
+                <div class="text-center">
+                    <img src="images/Logo_Small.png" style="max-height:5rem" />
+                </div>
+                <div class="text-center mt-2">
+                    <span class="text-danger fw-bolder">تم تسجيل الخروج بنجاح</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext myContext { get; set; } = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (myContext.User.Identity!.IsAuthenticated)
+        {
+            await myContext.SignOutAsync();
+            navigationManager.NavigateTo("/LogOut", true);
+        }
+    }
+}

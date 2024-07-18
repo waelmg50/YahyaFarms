@@ -1,5 +1,6 @@
 ﻿@page "/items/create"
 
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
 @using YahyaFarms.Web.Service.IService;
@@ -8,6 +9,8 @@
 @inject NavigationManager NavigationManager
 @inject IFileUpload iFileUpload;
 @inject IJSRuntime myJSRunTime;
+@attribute [Authorize(Roles = "Admin")]
+
 @rendermode InteractiveServer
 
 <PageTitle>صنف جديد</PageTitle>

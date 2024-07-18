@@ -12,5 +12,6 @@ namespace YahyaFarms.Web.Data
     {
         public DbSet<YahyaFarms.Models.Item> Items { get; set; } = default!;
         public DbSet<ItemImage> ItemsImages { get; set; } = default!;
+        public DbSet<AdminUser> AdminUsers { get; set; }
     }
 }

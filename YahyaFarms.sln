@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YahyaFarms.Web", "YahyaFarm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YahyaFarms.DTO", "YahyaFarms.DTO\YahyaFarms.DTO.csproj", "{AA4191E5-32D4-45A0-9BFD-954E09E5F0D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YahyaFarms.Common", "YahyaFarms.Common\YahyaFarms.Common.csproj", "{245DCB31-8621-452D-AE9F-CC217609118B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YahyaFarms.Common", "YahyaFarms.Common\YahyaFarms.Common.csproj", "{245DCB31-8621-452D-AE9F-CC217609118B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

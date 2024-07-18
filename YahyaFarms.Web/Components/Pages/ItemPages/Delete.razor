@@ -1,5 +1,6 @@
 ﻿@page "/items/delete"
 
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
 @using YahyaFarms.Web.Service.IService;
@@ -7,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @inject IFileUpload iFileUpload;
 @inject IJSRuntime myJSRunTime;
+@attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 
 <PageTitle>حذف الصنف</PageTitle>
@@ -29,7 +31,7 @@
         </dl>
         <dl class="row">
             <dt class="col-sm-2">الوصف</dt>
-            <dd class="col-sm-10">@item.ItemDescription</dd>
+            <dd class="col-sm-10">@((MarkupString)item.ItemDescription)</dd>
         </dl>
         <dl class="row">
             <dt class="col-sm-2">السعر الحالي</dt>

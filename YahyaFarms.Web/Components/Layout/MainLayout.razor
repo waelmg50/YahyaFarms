@@ -7,9 +7,29 @@
 
     <main>
         @* <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">من نحن</a>
+        <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">من نحن</a>
         </div> *@
-
+        <AuthorizeView>
+            <Authorized>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <span>مرحباً <b>@context.User.Identity!.Name</b>. <a class="fw-bolder" href="/LogOut">تسجيل الخروج</a></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        @* <AuthorizeView>
+        <NotAuthorized>
+        <a href="/Login">تسجيل الدخول</a>
+        </NotAuthorized>
+        <Authorized>
+        <a href="/LogOut">تسجيل الخروج</a>
+        </Authorized>
+        </AuthorizeView> *@
         <article class="content px-4">
             @Body
         </article>

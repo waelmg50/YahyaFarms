@@ -1,5 +1,6 @@
 ﻿@page "/items/details"
 
+@using Microsoft.AspNetCore;
 @using Microsoft.EntityFrameworkCore
 @using YahyaFarms.Models
 @inject IDbContextFactory<YahyaFarms.Web.Data.YahyaFarmsWebDbContext> DbFactory
@@ -24,14 +25,18 @@
             <dt class="col-sm-2">الوصف</dt>
             <dd class="col-sm-10">
                 <div class="row">
-                    @item.ItemDescription
+                    @((MarkupString)item.ItemDescription)
                 </div>
             </dd>
             <dt class="col-sm-2">السعر الحالي</dt>
             <dd class="col-sm-10">@item.CurrentPrice</dd>
         </dl>
         <div>
-            <a href="@($"/items/edit?itemid={item.ItemID}")">تعديل</a> |
+            <AuthorizeView>
+                <Authorized>
+                    <a href="@($"/items/edit?itemid={item.ItemID}")">تعديل</a> |
+                </Authorized>
+            </AuthorizeView>
             <a href="@($"/items")">العودة لقائمة الأصناف</a>
         </div>
         <br />
